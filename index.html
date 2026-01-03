@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>スマートタスク管理</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>スマートタスク管理</h1>
+    
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="tasks">タスク</button>
+      <button class="tab-btn" data-tab="analytics">分析</button>
+      <button class="tab-btn" data-tab="suggestions">改善提案</button>
+    </div>
+    
+    <div id="tasks-tab" class="tab-content active">
+      <!-- タスク追加フォーム -->
+      <div class="card">
+        <h2>新しいタスク</h2>
+        <form id="task-form">
+          <div class="form-group">
+            <label for="title">タイトル</label>
+            <input type="text" id="title" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="description">詳細</label>
+            <textarea id="description" rows="3"></textarea>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="urgency">緊急度 (1-5)</label>
+              <select id="urgency">
+                <option value="1">1 (低)</option>
+                <option value="2">2</option>
+                <option value="3" selected>3 (中)</option>
+                <option value="4">4</option>
+                <option value="5">5 (高)</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="importance">重要度 (1-5)</label>
+              <select id="importance">
+                <option value="1">1 (低)</option>
+                <option value="2">2</option>
+                <option value="3" selected>3 (中)</option>
+                <option value="4">4</option>
+                <option value="5">5 (高)</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="estimated-time">予想所要時間 (分)</label>
+              <input type="number" id="estimated-time" value="30">
+            </div>
+            
+            <div class="form-group">
+              <label for="due-date">期限</label>
+              <input type="date" id="due-date">
+            </div>
+          </div>
+          
+          <button type="submit" class="btn btn-primary">タスクを追加</button>
+        </form>
+      </div>
+      
+      <!-- タスク一覧 -->
+      <div class="task-list-container">
+        <h2>現在のタスク</h2>
+        <div id="task-list"></div>
+      </div>
+    </div>
+    
+    <div id="analytics-tab" class="tab-content">
+      <div class="card">
+        <h2>タスク傾向の分析</h2>
+        <div id="analytics-content"></div>
+      </div>
+    </div>
+    
+    <div id="suggestions-tab" class="tab-content">
+      <div class="card">
+        <h2>行動改善の提案</h2>
+        <div id="suggestions-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="taskStorage.js"></script>
+  <script src="taskAnalyzer.js"></script>
+  <script src="behaviorSuggester.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
