@@ -52,6 +52,20 @@ const BehaviorSuggester = {
       }
     }
     
+    // カテゴリ別の提案
+    const categoryAnalysis = TaskAnalyzer.generateCategoryAnalysis();
+    if (Object.keys(categoryAnalysis.data).length > 0) {
+      Object.keys(categoryAnalysis.data).forEach(category => {
+        const data = categoryAnalysis.data[category];
+        
+        if (data.postponedRate > 50) {
+          suggestions.push(
+            `「${category}」カテゴリのタスクの先延ばしが多いです。このカテゴリのタスクに取り組む時間帯を固定してみましょう。`
+          );
+        }
+      });
+    }
+    
     if (suggestions.length === 0) {
       suggestions.push("現在のタスク管理は効率的です。このまま続けましょう！");
     }
