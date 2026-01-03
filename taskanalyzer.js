@@ -47,5 +47,88 @@ const TaskAnalyzer = {
     }
     
     return reviewMessages;
+  },
+  
+  // カテゴリ別の分析を生成
+  generateCategoryAnalysis() {
+    const tasks = TaskStorage.getTasks();
+    const completedTasks = tasks.filter(task => task.status === 'completed');
+    
+    if (completedTasks.length === 0) {
+      return {
+        message: ["完了したタスクがないため、カテゴリ分析はできません。"],
+        data: {}
+      };
+    }
+    
+    // カテゴリ別にタスクをグループ化
+    const categoryGroups = {};
+    
+    completedTasks.forEach(task => {
+      if (task.category && task.category.main) {
+        const mainCategory = task.category.main;
+        
+        if (!categoryGroups[mainCategory]) {
+          categoryGroups[mainCategory] = [];
+        }
+        
+        categoryGroups[mainCategory].push(task);
+      }
+    });
+    
+    // カテゴリ別の分析結果
+    const categoryAnalysis = {};
+    
+    Object.keys(categoryGroups).forEach(category => {
+      const categoryTasks = categoryGroups[category];
+      
+      // 平均所要時間
+      const tasksWithBothTimes = categoryTasks.filter(task => task.estimatedTime && task.actualTime);
+      let avgTimeDiff = 0;
+      
+      if (tasksWithBothTimes.length > 0) {
+        avgTimeDiff = tasksWithBothTimes.reduce(
+          (sum, task) => sum + (task.actualTime - task.estimatedTime), 0
+        ) / tasksWithBothTimes.length;
+      }
+      
+      // 先延ばし率
+      const postponedCount = categoryTasks.filter(task => task.postponedCount > 0).length;
+      const postponedRate = categoryTasks.length > 0 ? postponedCount / categoryTasks.length : 0;
+      
+      categoryAnalysis[category] = {
+        count: categoryTasks.length,
+        avgTimeDiff: Math.round(avgTimeDiff),
+        postponedRate: Math.round(postponedRate * 100)
+      };
+    });
+    
+    // 分析メッセージの生成
+    let analysisMessages = [];
+    
+    Object.keys(categoryAnalysis).forEach(category => {
+      const analysis = categoryAnalysis[category];
+      
+      if (analysis.avgTimeDiff > 15) {
+        analysisMessages.push(
+          `「${category}」カテゴリのタスクは予想より平均${analysis.avgTimeDiff}分長くかかっています。見積もりを見直しましょう。`
+        );
+      }
+      
+      if (analysis.postponedRate > 30) {
+        analysisMessages.push(
+          `「${category}」カテゴリのタスクは${analysis.postponedRate}%が先延ばしされています。優先度の見直しを検討しましょう。`
+        );
+      }
+    });
+    
+    if (analysisMessages.length === 0) {
+      analysisMessages.push("カテゴリ別の特筆すべき傾向は見られません。");
+    }
+    
+    return {
+      message: analysisMessages,
+      data: categoryAnalysis
+    };
   }
 };
