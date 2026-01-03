@@ -26,6 +26,25 @@
             <input type="text" id="title" required>
           </div>
           
+          <!-- カテゴリ選択部分を追加 -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="main-category">メインカテゴリ</label>
+              <select id="main-category">
+                <option value="">選択してください</option>
+                <!-- JavaScriptで動的に生成 -->
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="sub-category">サブカテゴリ</label>
+              <select id="sub-category">
+                <option value="">メインカテゴリを先に選択</option>
+                <!-- JavaScriptで動的に生成 -->
+              </select>
+            </div>
+          </div>
+          
           <div class="form-group">
             <label for="description">詳細</label>
             <textarea id="description" rows="3"></textarea>
@@ -63,39 +82,4 @@
             
             <div class="form-group">
               <label for="due-date">期限</label>
-              <input type="date" id="due-date">
-            </div>
-          </div>
-          
-          <button type="submit" class="btn btn-primary">タスクを追加</button>
-        </form>
-      </div>
-      
-      <!-- タスク一覧 -->
-      <div class="task-list-container">
-        <h2>現在のタスク</h2>
-        <div id="task-list"></div>
-      </div>
-    </div>
-    
-    <div id="analytics-tab" class="tab-content">
-      <div class="card">
-        <h2>タスク傾向の分析</h2>
-        <div id="analytics-content"></div>
-      </div>
-    </div>
-    
-    <div id="suggestions-tab" class="tab-content">
-      <div class="card">
-        <h2>行動改善の提案</h2>
-        <div id="suggestions-content"></div>
-      </div>
-    </div>
-  </div>
-
-  <script src="taskStorage.js"></script>
-  <script src="taskAnalyzer.js"></script>
-  <script src="behaviorSuggester.js"></script>
-  <script src="app.js"></script>
-</body>
-</html>
+              <input type="date" id="
