@@ -13,6 +13,28 @@ document.addEventListener('DOMContentLoaded', () => {
   // カテゴリ選択UIの初期化
   initCategorySelectors();
   
+  // ヘルプボタンのクリックイベント
+  document.getElementById('urgency-help-btn').addEventListener('click', function(e) {
+    e.preventDefault();
+    const tooltip = document.getElementById('urgency-help');
+    tooltip.style.display = tooltip.style.display === 'block' ? 'none' : 'block';
+  });
+
+  document.getElementById('importance-help-btn').addEventListener('click', function(e) {
+    e.preventDefault();
+    const tooltip = document.getElementById('importance-help');
+    tooltip.style.display = tooltip.style.display === 'block' ? 'none' : 'block';
+  });
+
+  // ツールチップの外側をクリックしたら閉じる
+  document.addEventListener('click', function(e) {
+    if (!e.target.matches('.help-btn') && !e.target.closest('.help-tooltip')) {
+      document.querySelectorAll('.help-tooltip').forEach(tooltip => {
+        tooltip.style.display = 'none';
+      });
+    }
+  });
+  
   // タブ切り替え機能
   tabButtons.forEach(button => {
     button.addEventListener('click', () => {
@@ -129,11 +151,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // タスクリストの表示
   function renderTaskList() {
     const tasks = TaskStorage.getTasks();
-    const pendingTasks = tasks.filter(task => 
-      task.status === 'pending' || task.status === 'in-progress'
+    const activeTasks = tasks.filter(task => 
+      task.status === 'pending' || task.status === 'in-progress' || task.status === 'postponed'
     );
     
-    if (pendingTasks.length === 0) {
+    if (activeTasks.length === 0) {
       taskList.innerHTML = `
         <div class="empty-state">
           <p>タスクがありません。新しいタスクを追加してください。</p>
@@ -142,54 +164,103 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     
+    // タスクを状態でグループ化
+    const inProgressTasks = activeTasks.filter(task => task.status === 'in-progress');
+    const pendingTasks = activeTasks.filter(task => task.status === 'pending');
+    const postponedTasks = activeTasks.filter(task => task.status === 'postponed');
+    
     taskList.innerHTML = '';
-    pendingTasks.forEach(task => {
-      const taskElement = document.createElement('div');
-      taskElement.className = 'task-card';
+    
+    // 状態別のセクションを作成
+    if (inProgressTasks.length > 0) {
+      const sectionHeader = document.createElement('div');
+      sectionHeader.className = 'task-section-header';
+      sectionHeader.innerHTML = '<h3>取り組み中のタスク</h3>';
+      taskList.appendChild(sectionHeader);
       
-      // カテゴリに基づくクラス追加
-      if (task.category && task.category.main) {
-        if (task.category.main === '対顧客対応') {
-          taskElement.classList.add('category-customer');
-        } else if (task.category.main === '事業開発') {
-          taskElement.classList.add('category-business');
-        } else if (task.category.main === '社内業務') {
-          taskElement.classList.add('category-internal');
-        }
+      inProgressTasks.forEach(task => {
+        renderTaskCard(task, 'in-progress');
+      });
+    }
+    
+    if (pendingTasks.length > 0) {
+      const sectionHeader = document.createElement('div');
+      sectionHeader.className = 'task-section-header';
+      sectionHeader.innerHTML = '<h3>未着手のタスク</h3>';
+      taskList.appendChild(sectionHeader);
+      
+      pendingTasks.forEach(task => {
+        renderTaskCard(task, 'pending');
+      });
+    }
+    
+    if (postponedTasks.length > 0) {
+      const sectionHeader = document.createElement('div');
+      sectionHeader.className = 'task-section-header';
+      sectionHeader.innerHTML = '<h3>先延ばしにしたタスク</h3>';
+      taskList.appendChild(sectionHeader);
+      
+      postponedTasks.forEach(task => {
+        renderTaskCard(task, 'postponed');
+      });
+    }
+  }
+  
+  // タスクカードを描画する補助関数
+  function renderTaskCard(task, status) {
+    const taskElement = document.createElement('div');
+    taskElement.className = `task-card task-status-${status}`;
+    
+    // カテゴリに基づくクラス追加
+    if (task.category && task.category.main) {
+      if (task.category.main === '対顧客対応') {
+        taskElement.classList.add('category-customer');
+      } else if (task.category.main === '事業開発') {
+        taskElement.classList.add('category-business');
+      } else if (task.category.main === '社内業務') {
+        taskElement.classList.add('category-internal');
       }
-      
-      // 期限が近いかチェック
-      const dueDate = new Date(task.dueDate);
-      const today = new Date();
-      const isNearDue = dueDate < new Date(today.setDate(today.getDate() + 2));
-      
-      // カテゴリ情報を表示に追加
-      const categoryInfo = task.category && task.category.main ? 
-        `<div class="task-category">${task.category.main} > ${task.category.sub || '未分類'}</div>` : '';
-      
-      taskElement.innerHTML = `
-        <div class="task-header">
-          <h3 class="task-title">${task.title}</h3>
-          <div>
-            <span class="badge ${task.urgency >= 4 ? 'badge-urgent' : ''}">${'緊急度: ' + task.urgency}</span>
-            <span class="badge ${task.importance >= 4 ? 'badge-important' : ''}">${'重要度: ' + task.importance}</span>
-          </div>
+    }
+    
+    // 期限が近いかチェック
+    const dueDate = new Date(task.dueDate);
+    const today = new Date();
+    const isNearDue = dueDate < new Date(today.setDate(today.getDate() + 2));
+    
+    // 状態に応じたラベル
+    let statusLabel = '';
+    if (status === 'in-progress') {
+      statusLabel = '<span class="status-badge status-in-progress">取り組み中</span>';
+    } else if (status === 'postponed') {
+      statusLabel = `<span class="status-badge status-postponed">先延ばし (${task.postponedCount}回)</span>`;
+    }
+    
+    // カテゴリ情報を表示に追加
+    const categoryInfo = task.category && task.category.main ? 
+      `<div class="task-category">${task.category.main} > ${task.category.sub || '未分類'}</div>` : '';
+    
+    taskElement.innerHTML = `
+      <div class="task-header">
+        <h3 class="task-title">${task.title} ${statusLabel}</h3>
+        <div>
+          <span class="badge ${task.urgency >= 4 ? 'badge-urgent' : ''}">${'緊急度: ' + task.urgency}</span>
+          <span class="badge ${task.importance >= 4 ? 'badge-important' : ''}">${'重要度: ' + task.importance}</span>
         </div>
-        ${categoryInfo}
-        <p>${task.description}</p>
-        <div class="task-meta">
-          <div>予想時間: ${task.estimatedTime}分</div>
-          <div>期限: ${new Date(task.dueDate).toLocaleDateString()} ${isNearDue ? '(期限間近!)' : ''}</div>
-        </div>
-        <div class="task-actions">
-          <button class="btn btn-outline" onclick="postponeTask('${task.id}')">先延ばし</button>
-          <button class="btn btn-outline" onclick="startTask('${task.id}')">着手</button>
-          <button class="btn btn-primary" onclick="completeTask('${task.id}')">完了</button>
-        </div>
-      `;
-      
-      taskList.appendChild(taskElement);
-    });
+      </div>
+      ${categoryInfo}
+      <p>${task.description}</p>
+      <div class="task-meta">
+        <div>予想時間: ${task.estimatedTime}分</div>
+        <div>期限: ${new Date(task.dueDate).toLocaleDateString()} ${isNearDue ? '<span class="near-due">期限間近!</span>' : ''}</div>
+      </div>
+      <div class="task-actions">
+        ${status !== 'postponed' ? `<button class="btn btn-outline" onclick="postponeTask('${task.id}')">先延ばし</button>` : ''}
+        ${status !== 'in-progress' ? `<button class="btn btn-outline" onclick="startTask('${task.id}')">着手</button>` : ''}
+        <button class="btn btn-primary" onclick="completeTask('${task.id}')">完了</button>
+      </div>
+    `;
+    
+    taskList.appendChild(taskElement);
   }
   
   // 分析内容の更新
@@ -251,6 +322,65 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     analyticsContent.appendChild(categorySection);
+    
+    // 緊急度・重要度マトリックスの表示
+    const matrix = TaskAnalyzer.generateUrgencyImportanceMatrix();
+    const matrixSection = document.createElement('div');
+    matrixSection.innerHTML = '<h3 class="mt-4">緊急度・重要度マトリックス</h3>';
+
+    const matrixTable = document.createElement('table');
+    matrixTable.className = 'matrix-table';
+
+    // テーブルヘッダー
+    let headerRow = '<tr><th></th>';
+    for (let i = 5; i >= 1; i--) {
+      headerRow += `<th>重要度${i}</th>`;
+    }
+    headerRow += '</tr>';
+
+    // テーブル本体
+    let tableBody = '';
+    for (let urgency = 5; urgency >= 1; urgency--) {
+      tableBody += `<tr><th>緊急度${urgency}</th>`;
+      
+      for (let importance = 5; importance >= 1; importance--) {
+        const count = matrix[urgency][importance] || 0;
+        const cellClass = getMatrixCellClass(urgency, importance);
+        
+        tableBody += `<td class="${cellClass}">${count > 0 ? count : ''}</td>`;
+      }
+      
+      tableBody += '</tr>';
+    }
+
+    matrixTable.innerHTML = headerRow + tableBody;
+    matrixSection.appendChild(matrixTable);
+
+    // マトリックスの説明
+    const matrixLegend = document.createElement('div');
+    matrixLegend.className = 'matrix-legend';
+    matrixLegend.innerHTML = `
+      <div class="legend-item"><span class="legend-color matrix-critical"></span>最優先（緊急度5かつ重要度4-5）</div>
+      <div class="legend-item"><span class="legend-color matrix-high"></span>高優先（緊急度4-5かつ重要度3、または緊急度3かつ重要度4-5）</div>
+      <div class="legend-item"><span class="legend-color matrix-medium"></span>中優先（緊急度3かつ重要度3、または緊急度2かつ重要度4-5）</div>
+      <div class="legend-item"><span class="legend-color matrix-low"></span>低優先（それ以外）</div>
+    `;
+
+    matrixSection.appendChild(matrixLegend);
+    analyticsContent.appendChild(matrixSection);
+  }
+  
+  // マトリックスのセルクラスを取得する関数
+  function getMatrixCellClass(urgency, importance) {
+    if (urgency === 5 && importance >= 4) {
+      return 'matrix-critical';
+    } else if ((urgency >= 4 && importance >= 3) || (urgency >= 3 && importance >= 4)) {
+      return 'matrix-high';
+    } else if ((urgency === 3 && importance === 3) || (urgency === 2 && importance >= 4)) {
+      return 'matrix-medium';
+    } else {
+      return 'matrix-low';
+    }
   }
   
   // 提案内容の更新
