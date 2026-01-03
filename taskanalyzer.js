@@ -130,5 +130,25 @@ const TaskAnalyzer = {
       message: analysisMessages,
       data: categoryAnalysis
     };
+  },
+  
+  // 緊急度・重要度マトリックスのデータを生成
+  generateUrgencyImportanceMatrix() {
+    const tasks = TaskStorage.getTasks();
+    const activeTasks = tasks.filter(task => 
+      task.status === 'pending' || task.status === 'in-progress' || task.status === 'postponed'
+    );
+    
+    // 5x5のマトリックスを初期化（インデックスは1から始まるため6x6）
+    const matrix = Array(6).fill().map(() => Array(6).fill(0));
+    
+    // タスクをマトリックスに配置
+    activeTasks.forEach(task => {
+      const urgency = task.urgency || 3;
+      const importance = task.importance || 3;
+      matrix[urgency][importance] = (matrix[urgency][importance] || 0) + 1;
+    });
+    
+    return matrix;
   }
 };
